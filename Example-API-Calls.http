@@ -1,0 +1,138 @@
+# Get all the meals.
+https://localhost:44376/api/v1/meals
+
+###
+
+# Get meal 1 and scale the ingredient volume.
+https://localhost:44376/api/v1/meals/1?peopleToFeed=20
+
+###
+
+# Get ingredients using pagination. Set the offset to skip initial ingredients.
+https://localhost:44376/api/v1/ingredients?count=20&offset=2
+
+###
+
+# Get V1 of the stuff API.
+https://localhost:44376/api/v1/stuff
+
+###
+
+# Get V2 of the stuff API.
+https://localhost:44376/api/v2/stuff
+
+###
+
+# Get the header responses for an ingredient.
+HEAD https://localhost:44376/api/v1/ingredients/water
+
+###
+
+# Get an ingredient and specify the max age the cache entry can be. If the cache entry is older it will be refreshed.
+https://localhost:44376/api/v1/ingredients/water
+Cache-Control: max-age=10
+
+###
+
+# Get an ingredient and specify that the response should not be added to a cache. If it's already cached, the cached response will be returned.
+https://localhost:44376/api/v1/ingredients/water
+Cache-Control: no-store
+
+###
+
+# Remove an ingredient.
+DELETE https://localhost:44376/api/v1/ingredients/water
+
+###
+
+# Create a new ingredient.
+POST https://localhost:44376/api/v1/ingredients
+content-type: application/json
+
+{
+    "name": "cookie dough",
+    "description": "super delicious"
+}
+
+###
+
+# Update an ingredient.
+PUT https://localhost:44376/api/v1/ingredients/cookie%20dough
+content-type: application/json
+
+{
+    "description": "super duper delicious",
+    "imageUrl": "https://madeinaday.com/wp-content/uploads/2015/03/Eggless-Edible-Chocolate-Chip-Cookie-Dough-Recipe.jpg"
+}
+
+###
+
+# Make a bad request for updating an ingredient
+PUT https://localhost:44376/api/v1/ingredients/cookie%20dough
+content-type: application/json
+
+{
+    "description": "super duper delicious",
+    "imageUrl": "https://somewhere"
+}
+
+###
+
+# Create a new meal.
+POST https://localhost:44376/api/v1/meals
+content-type: application/json
+
+{
+    "name": "Chocolate chip cookies",
+    "instructions": "Bake them",
+    "feedsNumPeople": 1,
+    "mealingredients": [
+        {
+            "ingredient": "flour",
+            "unit": "grams",
+            "quantity": 200,
+        },
+        {
+            "ingredient": "sugar",
+            "unit": "grams",
+            "quantity": 50,
+        },
+    ]
+}
+
+###
+
+# Update the name of meal 1.
+PATCH https://localhost:44376/api/v1/meals/1
+content-type: application/json
+
+{
+    "name": "Delicious bread",
+}
+
+###
+
+# Update the ingredient for meal 1.
+PATCH https://localhost:44376/api/v1/meals/1
+content-type: application/json
+
+{
+    "mealingredients": [
+        {
+            "ingredient": "flour",
+            "unit": "grams",
+            "quantity": 20
+        }
+    ],
+}
+
+###
+
+# Update some details about meal 1.
+PATCH https://localhost:44376/api/v1/meals/1
+content-type: application/json
+
+{
+    "instructions": "eat it",
+    "feedsNumPeople": 1
+}
