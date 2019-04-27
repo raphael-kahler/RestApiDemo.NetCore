@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using AspNetCoreRateLimit;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +14,7 @@ using RestApiDemo.Api.DTO.Converters;
 using RestApiDemo.Framework;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
+using System.Collections.Generic;
 
 namespace RestApiDemo.Api
 {
@@ -35,6 +38,9 @@ namespace RestApiDemo.Api
                 options.SizeLimit = 500 * 1024 * 1024; // in bytes; max size of the middleware cache, default is 100 MB
             });
 
+            // use middleware to generate ETags, see: https://github.com/KevinDockx/HttpCacheHeaders
+            services.AddHttpCacheHeaders();
+
             services.AddMvc(options =>
                 {
                     options.CacheProfiles.Add("Default",
@@ -48,10 +54,21 @@ namespace RestApiDemo.Api
                             Location = ResponseCacheLocation.None,
                             NoStore = true
                         });
+                    options.ReturnHttpNotAcceptable = true; // true will return 406 if the requested media type (Accept header) is not supported, false will just return default media type
                 })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                 // Remove null entries from json responses with the following line.
                 .AddJsonOptions(options => { options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore; });
+
+            // Rate limiting (throttling) services, see https://github.com/stefanprodan/AspNetCoreRateLimit/wiki/IpRateLimitMiddleware#setup
+            services.AddOptions();
+            services.AddMemoryCache();
+            services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+            //services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies")); // use this if special rate limits should be applied to specfic IP addresses
+            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>(); // for distributed cache use DistributedCacheIpPolicyStore instead
+            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>(); // for distributed cache use DistributedCacheRateLimitCounterStore instead
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
             // Add API versioning services.
             services.AddApiVersioning(options => options.ReportApiVersions = true);
@@ -92,11 +109,19 @@ namespace RestApiDemo.Api
                 app.UseHsts();
             }
 
+            // turn on IP address based rate limiting
+            // since app.Use...() methods go in order, this should go first so it can stop requests before they are handled by the later methods.
+            app.UseIpRateLimiting();
+
             app.UseHttpsRedirection();
 
             // configure app to cache responses, see: https://docs.microsoft.com/en-us/aspnet/core/performance/caching/middleware?view=aspnetcore-2.2#configuration
             // note: The app.Use...() methods go in order and can short circuit later app.Use...() methods. Make sure UseResponseCaching() comes before UseMVC(), otherwise MVC will serve the results before the cache gets hit.
             app.UseResponseCaching();
+
+            // configure the app to use Etags and other cache headers. The UseResponseCaching() above already takes care of caching and Cache-Control header, so this call will mainly be used to enable ETags.
+            app.UseHttpCacheHeaders();
+
             app.Use(async (context, next) =>
             {
                 context.Response.GetTypedHeaders().CacheControl =
