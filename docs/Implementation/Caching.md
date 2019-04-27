@@ -2,7 +2,8 @@
 
 ## Caching implementation using ResponseCaching middleware
 
-This middleware comes as part of ASP.NET core. It takes care of almost all the cache implementations.
+The **ResponseCaching** middleware comes as part of ASP.NET core.
+It takes care of almost all the cache implementations.
 All that is required is to configure the middleware in the service startup and decorate the GET APIs that should be cached with `ResponseCache` attributes.
 Details can be found in the [ASP.NET core caching middleware docs](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/middleware?view=aspnetcore-2.2).
 
@@ -56,4 +57,25 @@ Now caching is enabled. The following table shows examples of caching scenarios 
 | 3     | `GET ~/api/v1/ingredients/water`<br/>Cache-Control: no-cache | The client can add a **no-cache** header to the GET request to force the server to ignore the cache. The server then serves the result and updates the cache with it, resetting the cache age. | Cache-Control: public,max-age=60 |
 | 4     | `GET ~/api/v1/ingredients/water`<br/>Cache-Control: no-store | The client can add a **no-store** header to the GET request to prevent the server from storing the response in the cache. If the response is already cached, the cached result is returned. | Cache-Control: public,max-age=60<br/>Age: 37 (if response was already cached) |
 | 5     | `GET ~/api/v1/ingredients/water`<br/>Cache-Control: no-cache,no-store | By adding both **no-cache** and **no-store** to the GET request the client tells the server to not use any cached response and also to not add the served response to the cache. Cache-Control header is still returned by the server, but no new response is cached. | Cache-Control: public,max-age=60 |
-| 6     | `GET ~/api/v1/ingredients/water`<br/>Cache-Control: max-age=10 | The client can add the **max-age** header to the GET request to only allow cached responses with a lower age. If the server cache is older, the server has to recreate the response. The cache is then refreshed with the new response | Cache-Control: public,max-age=60<br/>Age: 9 (if response is cached and age is within requested max-age) |
+| 6     | `GET ~/api/v1/ingredients/water`<br/>Cache-Control: max-age=10 | The client can add the **max-age** header to the GET request to only allow cached responses with a lower age. If the server cache is older, the server has to recreate the response. The cache is then refreshed with the new response. | Cache-Control: public,max-age=60<br/>Age: 9 (if response is cached and age is within requested max-age) |
+
+## ETags
+
+ETags can be generated using the [Marvin.Cache.Headers](https://github.com/KevinDockx/HttpCacheHeaders) middleware.
+It can add Cache-Control, Expires, ETag, and Last-Modified headers, but does not implement a cache.
+This middleware works well with the **ResponseCaching** middleware, which was used above to a cache to the API.
+
+To use, first install the **Marvin.Cache.Headers** NuGet package.
+
+Then, in Startup.cs add the following in ConfigureServices():
+
+```csharp
+services.AddHttpCacheHeaders();
+```
+
+Also add the following in Startup.cs in Configure().
+
+```csharp
+// Add this after app.UseResponseCaching() and before app.UseMVC()
+app.UseHttpCacheHeaders();
+```

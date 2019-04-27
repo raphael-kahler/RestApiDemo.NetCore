@@ -1,53 +1,63 @@
 # Get all the meals.
+
 https://localhost:44376/api/v1/meals
 
 ###
 
 # Get meal 1 and scale the ingredient volume.
+
 https://localhost:44376/api/v1/meals/1?peopleToFeed=20
 
 ###
 
 # Get ingredients using pagination. Set the offset to skip initial ingredients.
+
 https://localhost:44376/api/v1/ingredients?count=20&offset=2
 
 ###
 
 # Get V1 of the stuff API.
+
 https://localhost:44376/api/v1/stuff
 
 ###
 
 # Get V2 of the stuff API.
+
 https://localhost:44376/api/v2/stuff
 
 ###
 
 # Get the header responses for an ingredient.
+
 HEAD https://localhost:44376/api/v1/ingredients/water
 
 ###
 
 # Get an ingredient and specify the max age the cache entry can be. If the cache entry is older it will be refreshed.
+
 https://localhost:44376/api/v1/ingredients/water
 Cache-Control: max-age=10
 
 ###
 
 # Get an ingredient and specify that the response should not be added to a cache. If it's already cached, the cached response will be returned.
+
 https://localhost:44376/api/v1/ingredients/water
 Cache-Control: no-store
 
 ###
 
 # Remove an ingredient.
+
 DELETE https://localhost:44376/api/v1/ingredients/water
 
 ###
 
 # Create a new ingredient.
+
 POST https://localhost:44376/api/v1/ingredients
-content-type: application/json
+Content-Type: application/json
 
 {
     "name": "cookie dough",
@@ -56,9 +66,22 @@ content-type: application/json
 
 ###
 
+# Invalid request for creating a new ingredient. Name too long.
+
+POST https://localhost:44376/api/v1/ingredients
+Content-Type: application/json
+
+{
+    "name": "Ingredient with way too long of a name. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "description": "It's an ingredient."
+}
+
+###
+
 # Update an ingredient.
+
 PUT https://localhost:44376/api/v1/ingredients/cookie%20dough
-content-type: application/json
+Content-Type: application/json
 
 {
     "description": "super duper delicious",
@@ -68,8 +91,9 @@ content-type: application/json
 ###
 
 # Make a bad request for updating an ingredient
+
 PUT https://localhost:44376/api/v1/ingredients/cookie%20dough
-content-type: application/json
+Content-Type: application/json
 
 {
     "description": "super duper delicious",
@@ -79,8 +103,9 @@ content-type: application/json
 ###
 
 # Create a new meal.
+
 POST https://localhost:44376/api/v1/meals
-content-type: application/json
+Content-Type: application/json
 
 {
     "name": "Chocolate chip cookies",
@@ -103,8 +128,9 @@ content-type: application/json
 ###
 
 # Update the name of meal 1.
+
 PATCH https://localhost:44376/api/v1/meals/1
-content-type: application/json
+Content-Type: application/json
 
 {
     "name": "Delicious bread",
@@ -113,8 +139,9 @@ content-type: application/json
 ###
 
 # Update the ingredient for meal 1.
+
 PATCH https://localhost:44376/api/v1/meals/1
-content-type: application/json
+Content-Type: application/json
 
 {
     "mealingredients": [
@@ -129,10 +156,46 @@ content-type: application/json
 ###
 
 # Update some details about meal 1.
+
 PATCH https://localhost:44376/api/v1/meals/1
-content-type: application/json
+Content-Type: application/json
 
 {
     "instructions": "eat it",
     "feedsNumPeople": 1
+}
+
+###
+
+# Get an ingredient.
+
+GET https://localhost:44376/api/v1/ingredients/water
+
+###
+
+# Get an ingredient, only if it has changed.
+# If the resource is cached, then only the cached ETag is checked. If the cache entry is expired then the ETag be checked against the server.
+
+GET https://localhost:44376/api/v1/ingredients/water
+If-None-Match: "0225E9A85C3CBC04262A6B99025B29CD"
+
+###
+
+# Get an ingredient, only if it has changed.
+# Tell the server to not check any cached copy and always compare against the server itself.
+
+GET https://localhost:44376/api/v1/ingredients/water
+Cache-Control: no-cache
+If-None-Match: "0225E9A85C3CBC04262A6B99025B29CD"
+
+###
+
+# Update an ingredient, only if it has not changed.
+
+PUT https://localhost:44376/api/v1/ingredients/water
+If-Match: "0225E9A85C3CBC04262A6B99025B29CD"
+content-type: application/json
+
+{
+    "description": "it quenches your thirst"
 }
